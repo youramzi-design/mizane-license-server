@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiZane — Admin Licences</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    /* Layout */
+    .header  { background: #1e293b; border-bottom: 1px solid #334155; padding: 16px 24px;
+               display: flex; align-items: center; justify-content: space-between; }
+    .logo    { font-size: 20px; font-weight: 800; color: #f59e0b; letter-spacing: 2px; }
+    .tagline { font-size: 12px; color: #64748b; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+    /* Auth */
+    #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
+    .auth-card   { background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+                   padding: 32px; width: 360px; text-align: center; }
+    .auth-card h2 { color: #f59e0b; margin-bottom: 8px; }
+    .auth-card p  { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+
+    /* Stats */
+    .stats  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat   { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; }
+    .stat-v { font-size: 28px; font-weight: 800; color: #f59e0b; }
+    .stat-l { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    /* Toolbar */
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .btn     { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+               font-size: 13px; font-weight: 600; transition: all .15s; }
+    .btn-primary  { background: #d97706; color: #fff; }
+    .btn-primary:hover { background: #b45309; }
+    .btn-success  { background: #059669; color: #fff; }
+    .btn-success:hover  { background: #047857; }
+    .btn-danger   { background: #dc2626; color: #fff; }
+    .btn-danger:hover   { background: #b91c1c; }
+    .btn-ghost    { background: #334155; color: #94a3b8; }
+    .btn-ghost:hover    { background: #475569; color: #e2e8f0; }
+    .search { flex: 1; padding: 8px 12px; border-radius: 8px; background: #1e293b;
+              border: 1px solid #334155; color: #e2e8f0; font-size: 13px; min-width: 200px; }
+    .search:focus { outline: none; border-color: #f59e0b; }
+
+    /* Table */
+    .table-wrap { background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
+    table  { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead  { background: #0f172a; }
+    th     { padding: 10px 14px; text-align: left; color: #64748b; font-size: 11px;
+             text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    td     { padding: 12px 14px; border-top: 1px solid #1e293b; vertical-align: middle; }
+    tr:hover td { background: #1e3a5f22; }
+    .cle   { font-family: monospace; font-size: 12px; color: #f59e0b; letter-spacing: 1px; }
+    .copy-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 14px;
+                padding: 2px 4px; border-radius: 4px; }
+    .copy-btn:hover { color: #f59e0b; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-green  { background: #064e3b; color: #34d399; }
+    .badge-red    { background: #7f1d1d; color: #fca5a5; }
+    .badge-orange { background: #78350f; color: #fcd34d; }
+    .badge-gray   { background: #1e293b; color: #64748b; border: 1px solid #334155; }
+    .plan-mensuel  { background: #1e3a5f; color: #60a5fa; }
+    .plan-annuel   { background: #312e81; color: #a5b4fc; }
+    .plan-illimite { background: #064e3b; color: #34d399; }
+    .plan-essai    { background: #292524; color: #a8a29e; }
+
+    /* Modal */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100;
+               display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal   { background: #1e293b; border: 1px solid #334155; border-radius: 14px;
+               padding: 28px; width: 480px; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { color: #f59e0b; font-size: 16px; margin-bottom: 20px; }
+    .field    { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px;
+                   text-transform: uppercase; letter-spacing: .5px; }
+    .field input, .field select { width: 100%; padding: 9px 12px; background: #0f172a;
+      border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 13px; }
+    .field input:focus, .field select:focus { outline: none; border-color: #f59e0b; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* Detail activations */
+    .act-row { display: flex; justify-content: space-between; align-items: center;
+               padding: 10px 12px; background: #0f172a; border-radius: 8px; margin-bottom: 8px; }
+    .act-info { font-size: 12px; }
+    .act-nom  { font-weight: 600; color: #e2e8f0; }
+    .act-sub  { color: #64748b; margin-top: 2px; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #064e3b; color: #34d399;
+             padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+             box-shadow: 0 4px 20px rgba(0,0,0,.4); z-index: 200; transition: opacity .3s; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">⚖️ MiZane</div>
+    <div class="tagline">Tableau de bord — Gestion des licences</div>
+  </div>
+  <button class="btn btn-ghost" id="btn-logout" style="display:none" onclick="logout()">
+    Déconnexion
+  </button>
+</div>
+
+<!-- Écran auth -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div style="font-size:36px;margin-bottom:12px">🔑</div>
+    <h2>Accès Admin</h2>
+    <p>Entrez votre clé administrateur pour accéder au tableau de bord.</p>
+    <input type="password" id="admin-key-input" placeholder="Clé admin"
+      style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;
+             border-radius:8px;color:#e2e8f0;margin-bottom:12px;font-size:14px;text-align:center;"
+      onkeydown="if(event.key==='Enter')login()" />
+    <button class="btn btn-primary" style="width:100%" onclick="login()">Connexion</button>
+    <p id="auth-err" style="color:#f87171;font-size:12px;margin-top:10px;display:none"></p>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="hidden">
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats" id="stats-row">
+      <div class="stat"><div class="stat-v" id="s-total">—</div><div class="stat-l">Total licences</div></div>
+      <div class="stat"><div class="stat-v" id="s-actives" style="color:#34d399">—</div><div class="stat-l">Actives</div></div>
+      <div class="stat"><div class="stat-v" id="s-exp" style="color:#f87171">—</div><div class="stat-l">Expirées</div></div>
+      <div class="stat"><div class="stat-v" id="s-app" style="color:#60a5fa">—</div><div class="stat-l">Appareils</div></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input class="search" id="search" placeholder="Rechercher client, clé..." oninput="filtrer()" />
+      <button class="btn btn-primary" onclick="ouvrirModalCreation()">+ Nouvelle licence</button>
+      <button class="btn btn-ghost" id="btn-actualiser" onclick="actualiser()">↻ Actualiser</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Clé de licence</th>
+            <th>Plan</th>
+            <th>Expiration</th>
+            <th>Appareils</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal création -->
+<div class="overlay hidden" id="modal-creation">
+  <div class="modal">
+    <h2>+ Nouvelle licence</h2>
+    <div class="field">
+      <label>Nom de la bijouterie *</label>
+      <input id="f-nom" type="text" placeholder="Ex: Bijouterie Al Amal" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Email</label>
+        <input id="f-email" type="email" placeholder="contact@bijouterie.ma" />
+      </div>
+      <div class="field">
+        <label>Téléphone</label>
+        <input id="f-tel" type="tel" placeholder="0661234567" />
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Plan</label>
+        <select id="f-plan">
+          <option value="essai">Essai (gratuit)</option>
+          <option value="mensuel" selected>Mensuel</option>
+          <option value="annuel">Annuel</option>
+          <option value="illimite">Illimité</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Durée (mois)</label>
+        <input id="f-mois" type="number" min="1" value="1" placeholder="1" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Nombre d'appareils max</label>
+      <input id="f-appareils" type="number" min="1" value="1" />
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <input id="f-notes" type="text" placeholder="Remarques..." />
+    </div>
+    <p id="modal-err" style="color:#f87171;font-size:12px;display:none;margin-bottom:8px"></p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fermerModal('modal-creation')">Annuler</button>
+      <button class="btn btn-primary" onclick="creerLicence()">Créer la licence</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal détail -->
+<div class="overlay hidden" id="modal-detail">
+  <div class="modal" style="width:560px">
+    <h2 id="detail-titre">Détail licence</h2>
+    <div id="detail-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fermerModal('modal-detail')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+let ADMIN_KEY = '';
+let licences  = [];
+
+function login() {
+  const key = document.getElementById('admin-key-input').value.trim();
+  if (!key) return;
+  ADMIN_KEY = key;
+  charger();
+}
+
+function logout() {
+  ADMIN_KEY = '';
+  licences  = [];
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('btn-logout').style.display = 'none';
+  document.getElementById('admin-key-input').value = '';
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+async function charger() {
+  try {
+    const [data, stats] = await Promise.all([
+      api('GET', '/admin/licences'),
+      api('GET', '/admin/stats'),
+    ]);
+    if (data.erreur) {
+      document.getElementById('auth-err').textContent = 'Clé incorrecte';
+      document.getElementById('auth-err').style.display = 'block';
+      return;
+    }
+    licences = data;
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('btn-logout').style.display = 'block';
+    document.getElementById('auth-err').style.display   = 'none';
+    document.getElementById('s-total').textContent   = stats.total    ?? 0;
+    document.getElementById('s-actives').textContent = stats.actives  ?? 0;
+    document.getElementById('s-exp').textContent     = stats.expirees ?? 0;
+    document.getElementById('s-app').textContent     = stats.appareils?? 0;
+    afficherTable(licences);
+  } catch(e) {
+    document.getElementById('auth-err').textContent = 'Impossible de joindre le serveur';
+    document.getElementById('auth-err').style.display = 'block';
+  }
+}
+
+async function actualiser() {
+  const btn = document.getElementById('btn-actualiser');
+  btn.textContent = '⏳ ...';
+  btn.disabled = true;
+  try {
+    const [data, stats] = await Promise.all([
+      api('GET', '/admin/licences'),
+      api('GET', '/admin/stats'),
+    ]);
+    if (!Array.isArray(data)) { toast('❌ Erreur serveur'); return; }
+    licences = data;
+    document.getElementById('s-total').textContent    = stats.total     ?? 0;
+    document.getElementById('s-actives').textContent  = stats.actives   ?? 0;
+    document.getElementById('s-exp').textContent      = stats.expirees  ?? 0;
+    document.getElementById('s-app').textContent      = stats.appareils ?? 0;
+    const q = document.getElementById('search').value.toLowerCase();
+    if (q) {
+      afficherTable(licences.filter(l =>
+        l.client_nom.toLowerCase().includes(q) ||
+        l.cle.toLowerCase().includes(q) ||
+        (l.client_email ?? '').toLowerCase().includes(q)
+      ));
+    } else {
+      afficherTable(licences);
+    }
+    toast('✅ Données actualisées');
+  } catch(e) {
+    toast('❌ Impossible de contacter le serveur');
+  } finally {
+    btn.textContent = '↻ Actualiser';
+    btn.disabled = false;
+  }
+}
+
+function filtrer() {
+  const q = document.getElementById('search').value.toLowerCase();
+  afficherTable(licences.filter(l =>
+    l.client_nom.toLowerCase().includes(q) ||
+    l.cle.toLowerCase().includes(q) ||
+    (l.client_email ?? '').toLowerCase().includes(q)
+  ));
+}
+
+function afficherTable(rows) {
+  const tb = document.getElementById('tbody');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#64748b">Aucune licence</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(l => {
+    const jr      = l.jours_restants ?? 0;
+    const expStr  = new Date(l.date_fin).toLocaleDateString('fr-MA');
+    const statut  = !l.actif ? `<span class="badge badge-gray">Révoquée</span>`
+                  : jr <= 0  ? `<span class="badge badge-red">Expirée</span>`
+                  : jr <= 7  ? `<span class="badge badge-orange">⚠️ J-${jr}</span>`
+                  : `<span class="badge badge-green">Active</span>`;
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:600">${esc(l.client_nom)}</div>
+          <div style="font-size:11px;color:#64748b">${esc(l.client_email ?? '')} ${esc(l.client_tel ?? '')}</div>
+        </td>
+        <td>
+          <span class="cle">${l.cle}</span>
+          <button class="copy-btn" onclick="copier('${l.cle}')" title="Copier">📋</button>
+        </td>
+        <td><span class="badge plan-${l.plan}">${l.plan}</span></td>
+        <td style="color:${jr<=7?'#fcd34d':'#94a3b8'}">${expStr}<div style="font-size:11px;color:#64748b">${jr>0?jr+' j restants':'Expirée'}</div></td>
+        <td style="text-align:center">${l.nb_activations}/${l.max_appareils}</td>
+        <td>${statut}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="voirDetail(${l.id})">Détail</button>
+            <button class="btn btn-success" style="padding:5px 10px;font-size:11px" onclick="prolonger(${l.id},'${esc(l.client_nom)}')">+Durée</button>
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="modifierDate(${l.id},'${esc(l.client_nom)}','${l.date_fin}')">✏️ Date</button>
+            ${l.actif
+              ? `<button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="revoquer(${l.id},'${esc(l.client_nom)}')">Révoquer</button>`
+              : `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="reactiver(${l.id})">Réactiver</button>`
+            }
+            <button class="btn btn-danger" style="padding:5px 10px;font-size:11px;background:#7f1d1d"
+              onclick="supprimer(${l.id},'${esc(l.client_nom)}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function ouvrirModalCreation() {
+  ['f-nom','f-email','f-tel','f-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-plan').value     = 'mensuel';
+  document.getElementById('f-mois').value     = '1';
+  document.getElementById('f-appareils').value= '1';
+  document.getElementById('modal-err').style.display = 'none';
+  document.getElementById('modal-creation').classList.remove('hidden');
+  document.getElementById('f-nom').focus();
+}
+
+async function creerLicence() {
+  const nom = document.getElementById('f-nom').value.trim();
+  if (!nom) {
+    document.getElementById('modal-err').textContent = 'Le nom est obligatoire';
+    document.getElementById('modal-err').style.display = 'block';
+    return;
+  }
+  const data = await api('POST', '/admin/licences', {
+    client_nom:    nom,
+    client_email:  document.getElementById('f-email').value.trim() || null,
+    client_tel:    document.getElementById('f-tel').value.trim()   || null,
+    plan:          document.getElementById('f-plan').value,
+    mois:          parseInt(document.getElementById('f-mois').value) || 1,
+    max_appareils: parseInt(document.getElementById('f-appareils').value) || 1,
+    notes:         document.getElementById('f-notes').value.trim() || null,
+  });
+  if (data.ok) {
+    fermerModal('modal-creation');
+    toast(`✅ Licence créée : ${data.cle}`);
+    charger();
+  } else {
+    document.getElementById('modal-err').textContent = data.erreur ?? 'Erreur';
+    document.getElementById('modal-err').style.display = 'block';
+  }
+}
+
+async function voirDetail(id) {
+  const data = await api('GET', `/admin/licences/${id}`);
+  document.getElementById('detail-titre').textContent = `${data.client_nom} — ${data.cle}`;
+  const acts = data.activations ?? [];
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px">
+      <div><span style="color:#64748b">Plan :</span> <span class="badge plan-${data.plan}">${data.plan}</span></div>
+      <div><span style="color:#64748b">Expire :</span> ${new Date(data.date_fin).toLocaleDateString('fr-MA')}</div>
+      <div><span style="color:#64748b">Email :</span> ${data.client_email ?? '—'}</div>
+      <div><span style="color:#64748b">Tél :</span> ${data.client_tel ?? '—'}</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;">
+        Appareils activés (${acts.filter(a=>a.actif).length}/${data.max_appareils})
+      </div>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px"
+        onclick="modifierAppareils(${data.id}, ${data.max_appareils})">
+        ✏️ Modifier le nombre
+      </button>
+    </div>
+    ${acts.length === 0
+      ? '<p style="color:#64748b;font-size:13px">Aucun appareil activé</p>'
+      : acts.map(a => `
+        <div class="act-row">
+          <div class="act-info">
+            <div class="act-nom">${a.machine_nom ?? a.machine_id.slice(0,16)+'...'}</div>
+            <div class="act-sub">
+              Activé le ${new Date(a.activated_at).toLocaleDateString('fr-MA')} ·
+              Vu le ${new Date(a.last_seen).toLocaleDateString('fr-MA')}
+              ${a.app_version ? ' · v'+a.app_version : ''}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${a.actif
+              ? `<span class="badge badge-green">Actif</span>
+                 <button class="btn btn-danger" style="padding:4px 8px;font-size:11px"
+                   onclick="revoquerAppareil(${a.id})">Révoquer</button>`
+              : `<span class="badge badge-gray">Révoqué</span>
+                 <button class="btn btn-success" style="padding:4px 8px;font-size:11px"
+                   onclick="reactiverAppareil(${a.id})">Réactiver</button>`
+            }
+          </div>
+        </div>`).join('')
+    }`;
+  document.getElementById('modal-detail').classList.remove('hidden');
+}
+
+async function prolonger(id, nom) {
+  const mois = prompt(`Prolonger la licence de "${nom}"\nNombre de mois à ajouter :`, '1');
+  if (!mois || isNaN(parseInt(mois))) return;
+  const data = await api('PUT', `/admin/licences/${id}/prolonger`, { mois: parseInt(mois) });
+  if (data.ok) {
+    toast(`✅ Prolongée jusqu'au ${new Date(data.date_fin).toLocaleDateString('fr-MA')}`);
+    charger();
+  }
+}
+
+async function modifierDate(id, nom, dateFin) {
+  // Afficher la date actuelle au format YYYY-MM-DD pour l'input date
+  const actuelle = new Date(dateFin).toISOString().split('T')[0];
+  const nouvelle = prompt(`Modifier la date d'expiration de "${nom}"\n\nDate actuelle : ${actuelle}\nNouvelle date (AAAA-MM-JJ) :`, actuelle);
+  if (!nouvelle || nouvelle === actuelle) return;
+  if (isNaN(new Date(nouvelle).getTime())) { alert('Date invalide'); return; }
+  const data = await api('PUT', `/admin/licences/${id}/date`, { date_fin: nouvelle });
+  if (data.ok) {
+    toast(`✅ Date modifiée → ${new Date(data.date_fin).toLocaleDateString('fr-MA')} (${data.jours_restants} jours)`);
+    charger();
+  } else {
+    toast('❌ ' + (data.erreur ?? 'Erreur'));
+  }
+}
+
+async function revoquer(id, nom) {
+  if (!confirm(`Révoquer la licence de "${nom}" ?\nL'accès sera bloqué immédiatement.`)) return;
+  const data = await api('PUT', `/admin/licences/${id}/revoquer`);
+  if (data.ok) { toast('⛔ Licence révoquée'); charger(); }
+}
+
+async function supprimer(id, nom) {
+  if (!confirm(`Supprimer définitivement la licence de "${nom}" ?\n\nTous les appareils activés seront aussi supprimés.\nCette action est irréversible.`)) return;
+  const data = await fetch(`/admin/licences/${id}`, {
+    method: 'DELETE', headers: { 'x-admin-key': ADMIN_KEY }
+  }).then(r => r.json());
+  if (data.ok) { toast(`🗑️ Licence de "${nom}" supprimée`); actualiser(); }
+  else toast('❌ ' + (data.erreur ?? 'Erreur'));
+}
+
+async function reactiver(id) {
+  const data = await api('PUT', `/admin/licences/${id}/reactiver`);
+  if (data.ok) { toast('✅ Licence réactivée'); charger(); }
+}
+
+async function revoquerAppareil(id) {
+  if (!confirm('Révoquer cet appareil ?')) return;
+  const data = await fetch(`/admin/activations/${id}`, {
+    method: 'DELETE', headers: { 'x-admin-key': ADMIN_KEY }
+  }).then(r => r.json());
+  if (data.ok) { toast('✅ Appareil révoqué'); fermerModal('modal-detail'); charger(); }
+}
+
+async function modifierAppareils(licenceId, actuel) {
+  const val = prompt(`Nombre maximum d'appareils autorisés :\n\nActuel : ${actuel}`, actuel);
+  if (!val || isNaN(parseInt(val)) || parseInt(val) < 1) return;
+  const data = await api('PUT', `/admin/licences/${licenceId}/appareils`, {
+    max_appareils: parseInt(val)
+  });
+  if (data.ok) {
+    toast(`✅ Limite mise à jour : ${data.max_appareils} appareil(s)`);
+    fermerModal('modal-detail');
+    charger();
+  } else {
+    toast('❌ ' + (data.erreur ?? 'Erreur'));
+  }
+}
+
+async function reactiverAppareil(id) {
+  const data = await api('PUT', `/admin/activations/${id}/reactiver`);
+  if (data.ok) { toast('✅ Appareil réactivé'); fermerModal('modal-detail'); charger(); }
+}
+
+function fermerModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function copier(texte) {
+  navigator.clipboard.writeText(texte).then(() => toast('📋 Clé copiée !'));
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+function esc(s) { return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+// Fermer modals en cliquant dehors
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => {
+  if (e.target === o) o.classList.add('hidden');
+}));
+</script>
+</body>
+</html>
