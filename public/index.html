@@ -443,6 +443,8 @@ async function voirDetail(id) {
                  <button class="btn btn-success" style="padding:4px 8px;font-size:11px"
                    onclick="reactiverAppareil(${a.id})">Réactiver</button>`
             }
+            <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px;color:#f87171"
+              onclick="supprimerAppareil(${a.id})">🗑️</button>
           </div>
         </div>`).join('')
     }`;
@@ -520,6 +522,15 @@ async function modifierAppareils(licenceId, actuel) {
 async function reactiverAppareil(id) {
   const data = await api('PUT', `/admin/activations/${id}/reactiver`);
   if (data.ok) { toast('✅ Appareil réactivé'); fermerModal('modal-detail'); charger(); }
+}
+
+async function supprimerAppareil(id) {
+  if (!confirm('Supprimer définitivement cet appareil ?\nIl devra être réactivé avec la clé de licence.')) return;
+  const data = await fetch(`/admin/activations/${id}/supprimer`, {
+    method: 'DELETE', headers: { 'x-admin-key': ADMIN_KEY }
+  }).then(r => r.json());
+  if (data.ok) { toast('🗑️ Appareil supprimé'); fermerModal('modal-detail'); charger(); }
+  else toast('❌ ' + (data.erreur ?? 'Erreur'));
 }
 
 function fermerModal(id) { document.getElementById(id).classList.add('hidden'); }

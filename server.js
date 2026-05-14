@@ -534,6 +534,20 @@ app.delete('/admin/activations/:id', adminAuth, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erreur: 'Erreur serveur' }); }
 });
 
+app.delete('/admin/activations/:id/supprimer', adminAuth, async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    if (USE_PG) {
+      await pool.query('DELETE FROM activations WHERE id=$1', [id]);
+      return res.json({ ok: true });
+    }
+    const db = jsonLire();
+    db.activations = db.activations.filter(a => a.id !== id);
+    jsonSauve(db);
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ erreur: 'Erreur serveur' }); }
+});
+
 app.put('/admin/activations/:id/reactiver', adminAuth, async (req, res) => {
   const id = parseInt(req.params.id);
   try {
