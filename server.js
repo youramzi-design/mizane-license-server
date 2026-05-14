@@ -12,6 +12,7 @@
 
 const express = require('express');
 const jwt     = require('jsonwebtoken');
+const cors    = require('cors');
 const fs      = require('fs');
 const path    = require('path');
 
@@ -22,6 +23,7 @@ const ADMIN_KEY  = process.env.ADMIN_KEY  || 'mizane-admin-2025';
 const TOKEN_TTL  = '8d';
 const USE_PG     = !!process.env.DATABASE_URL;
 
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
