@@ -362,6 +362,30 @@ app.get('/admin/licences/:id', adminAuth, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ erreur: 'Erreur serveur' }); }
 });
 
+app.put('/admin/licences/:id/modifier', adminAuth, async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { client_nom, client_email, client_tel, notes } = req.body;
+  if (!client_nom) return res.status(400).json({ erreur: 'Nom client obligatoire' });
+  try {
+    if (USE_PG) {
+      await pool.query(
+        'UPDATE licences SET client_nom=$1, client_email=$2, client_tel=$3, notes=$4 WHERE id=$5',
+        [client_nom, client_email ?? null, client_tel ?? null, notes ?? null, id]
+      );
+      return res.json({ ok: true });
+    }
+    const db = jsonLire();
+    const l  = db.licences.find(l => l.id === id);
+    if (!l) return res.status(404).json({ erreur: 'Introuvable' });
+    l.client_nom   = client_nom;
+    l.client_email = client_email ?? null;
+    l.client_tel   = client_tel   ?? null;
+    l.notes        = notes        ?? null;
+    jsonSauve(db);
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ erreur: 'Erreur serveur' }); }
+});
+
 app.post('/admin/licences', adminAuth, async (req, res) => {
   const { client_nom, client_email, client_tel, plan, mois, max_appareils, notes } = req.body;
   if (!client_nom) return res.status(400).json({ erreur: 'Nom client obligatoire' });

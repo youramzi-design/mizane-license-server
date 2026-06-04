@@ -211,6 +211,37 @@
   </div>
 </div>
 
+<!-- Modal modifier client -->
+<div class="overlay hidden" id="modal-modifier">
+  <div class="modal">
+    <h2>✏️ Modifier le client</h2>
+    <input type="hidden" id="m-id" />
+    <div class="field">
+      <label>Nom de la bijouterie *</label>
+      <input id="m-nom" type="text" placeholder="Ex: Bijouterie Al Amal" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Email</label>
+        <input id="m-email" type="email" placeholder="contact@bijouterie.ma" />
+      </div>
+      <div class="field">
+        <label>Téléphone</label>
+        <input id="m-tel" type="tel" placeholder="0661234567" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <input id="m-notes" type="text" placeholder="Remarques..." />
+    </div>
+    <p id="modifier-err" style="color:#f87171;font-size:12px;display:none;margin-bottom:8px"></p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fermerModal('modal-modifier')">Annuler</button>
+      <button class="btn btn-primary" onclick="sauvegarderModification()">💾 Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal détail -->
 <div class="overlay hidden" id="modal-detail">
   <div class="modal" style="width:560px">
@@ -352,6 +383,7 @@ function afficherTable(rows) {
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="voirDetail(${l.id})">Détail</button>
+            <button class="btn btn-primary" style="padding:5px 10px;font-size:11px;background:#1d4ed8" onclick="ouvrirModifier(${l.id},'${esc(l.client_nom)}','${esc(l.client_email??'')}','${esc(l.client_tel??'')}','${esc(l.notes??'')}')">✏️ Modifier</button>
             <button class="btn btn-success" style="padding:5px 10px;font-size:11px" onclick="prolonger(${l.id},'${esc(l.client_nom)}')">+Durée</button>
             <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="modifierDate(${l.id},'${esc(l.client_nom)}','${l.date_fin}')">✏️ Date</button>
             ${l.actif
@@ -449,6 +481,41 @@ async function voirDetail(id) {
         </div>`).join('')
     }`;
   document.getElementById('modal-detail').classList.remove('hidden');
+}
+
+function ouvrirModifier(id, nom, email, tel, notes) {
+  document.getElementById('m-id').value    = id;
+  document.getElementById('m-nom').value   = nom;
+  document.getElementById('m-email').value = email;
+  document.getElementById('m-tel').value   = tel;
+  document.getElementById('m-notes').value = notes;
+  document.getElementById('modifier-err').style.display = 'none';
+  document.getElementById('modal-modifier').classList.remove('hidden');
+  document.getElementById('m-nom').focus();
+}
+
+async function sauvegarderModification() {
+  const id  = document.getElementById('m-id').value;
+  const nom = document.getElementById('m-nom').value.trim();
+  if (!nom) {
+    document.getElementById('modifier-err').textContent = 'Le nom est obligatoire';
+    document.getElementById('modifier-err').style.display = 'block';
+    return;
+  }
+  const data = await api('PUT', `/admin/licences/${id}/modifier`, {
+    client_nom:   nom,
+    client_email: document.getElementById('m-email').value.trim() || null,
+    client_tel:   document.getElementById('m-tel').value.trim()   || null,
+    notes:        document.getElementById('m-notes').value.trim() || null,
+  });
+  if (data.ok) {
+    fermerModal('modal-modifier');
+    toast('✅ Client modifié');
+    charger();
+  } else {
+    document.getElementById('modifier-err').textContent = data.erreur ?? 'Erreur';
+    document.getElementById('modifier-err').style.display = 'block';
+  }
 }
 
 async function prolonger(id, nom) {
