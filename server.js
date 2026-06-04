@@ -56,20 +56,36 @@ async function initDB() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS licences (
-      id            SERIAL PRIMARY KEY,
-      cle           TEXT UNIQUE NOT NULL,
-      client_nom    TEXT NOT NULL,
-      client_email  TEXT,
-      client_tel    TEXT,
-      plan          TEXT DEFAULT 'mensuel',
-      date_debut    TIMESTAMPTZ DEFAULT NOW(),
-      date_fin      TIMESTAMPTZ NOT NULL,
-      max_appareils INT DEFAULT 1,
-      actif         BOOLEAN DEFAULT TRUE,
-      notes         TEXT,
-      created_at    TIMESTAMPTZ DEFAULT NOW()
+      id              SERIAL PRIMARY KEY,
+      cle             TEXT UNIQUE NOT NULL,
+      client_nom      TEXT NOT NULL,
+      client_prenom   TEXT,
+      client_nom_fam  TEXT,
+      client_email    TEXT,
+      client_tel      TEXT,
+      client_tel2     TEXT,
+      client_adresse  TEXT,
+      client_ville    TEXT,
+      plan            TEXT DEFAULT 'mensuel',
+      date_debut      TIMESTAMPTZ DEFAULT NOW(),
+      date_fin        TIMESTAMPTZ NOT NULL,
+      max_appareils   INT DEFAULT 1,
+      actif           BOOLEAN DEFAULT TRUE,
+      notes           TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // Migration : ajouter les nouvelles colonnes si elles n'existent pas
+  const migrations = [
+    "ALTER TABLE licences ADD COLUMN IF NOT EXISTS client_prenom  TEXT",
+    "ALTER TABLE licences ADD COLUMN IF NOT EXISTS client_nom_fam TEXT",
+    "ALTER TABLE licences ADD COLUMN IF NOT EXISTS client_tel2    TEXT",
+    "ALTER TABLE licences ADD COLUMN IF NOT EXISTS client_adresse TEXT",
+    "ALTER TABLE licences ADD COLUMN IF NOT EXISTS client_ville   TEXT",
+  ];
+  for (const m of migrations) {
+    try { await pool.query(m); } catch {}
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS activations (
       id           SERIAL PRIMARY KEY,
@@ -364,30 +380,39 @@ app.get('/admin/licences/:id', adminAuth, async (req, res) => {
 
 app.put('/admin/licences/:id/modifier', adminAuth, async (req, res) => {
   const id = parseInt(req.params.id);
-  const { client_nom, client_email, client_tel, notes } = req.body;
-  if (!client_nom) return res.status(400).json({ erreur: 'Nom client obligatoire' });
+  const { client_nom, client_prenom, client_nom_fam, client_email,
+          client_tel, client_tel2, client_adresse, client_ville, notes } = req.body;
+  if (!client_nom) return res.status(400).json({ erreur: 'Nom de la bijouterie obligatoire' });
   try {
     if (USE_PG) {
       await pool.query(
-        'UPDATE licences SET client_nom=$1, client_email=$2, client_tel=$3, notes=$4 WHERE id=$5',
-        [client_nom, client_email ?? null, client_tel ?? null, notes ?? null, id]
+        `UPDATE licences SET
+          client_nom=$1, client_prenom=$2, client_nom_fam=$3,
+          client_email=$4, client_tel=$5, client_tel2=$6,
+          client_adresse=$7, client_ville=$8, notes=$9
+         WHERE id=$10`,
+        [client_nom, client_prenom??null, client_nom_fam??null,
+         client_email??null, client_tel??null, client_tel2??null,
+         client_adresse??null, client_ville??null, notes??null, id]
       );
       return res.json({ ok: true });
     }
     const db = jsonLire();
     const l  = db.licences.find(l => l.id === id);
     if (!l) return res.status(404).json({ erreur: 'Introuvable' });
-    l.client_nom   = client_nom;
-    l.client_email = client_email ?? null;
-    l.client_tel   = client_tel   ?? null;
-    l.notes        = notes        ?? null;
+    Object.assign(l, { client_nom, client_prenom:client_prenom??null,
+      client_nom_fam:client_nom_fam??null, client_email:client_email??null,
+      client_tel:client_tel??null, client_tel2:client_tel2??null,
+      client_adresse:client_adresse??null, client_ville:client_ville??null, notes:notes??null });
     jsonSauve(db);
     res.json({ ok: true });
   } catch (err) { console.error(err); res.status(500).json({ erreur: 'Erreur serveur' }); }
 });
 
 app.post('/admin/licences', adminAuth, async (req, res) => {
-  const { client_nom, client_email, client_tel, plan, mois, max_appareils, notes } = req.body;
+  const { client_nom, client_prenom, client_nom_fam, client_email,
+          client_tel, client_tel2, client_adresse, client_ville,
+          plan, mois, max_appareils, notes } = req.body;
   if (!client_nom) return res.status(400).json({ erreur: 'Nom client obligatoire' });
 
   const dateFin = new Date();
@@ -399,20 +424,26 @@ app.post('/admin/licences', adminAuth, async (req, res) => {
   try {
     if (USE_PG) {
       const { rows } = await pool.query(
-        `INSERT INTO licences (cle,client_nom,client_email,client_tel,plan,date_fin,max_appareils,notes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,cle,date_fin`,
-        [cle, client_nom, client_email ?? null, client_tel ?? null,
-         plan ?? 'mensuel', dateFin.toISOString(), max_appareils ?? 1, notes ?? null]);
+        `INSERT INTO licences
+          (cle,client_nom,client_prenom,client_nom_fam,client_email,client_tel,client_tel2,
+           client_adresse,client_ville,plan,date_fin,max_appareils,notes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id,cle,date_fin`,
+        [cle, client_nom, client_prenom??null, client_nom_fam??null,
+         client_email??null, client_tel??null, client_tel2??null,
+         client_adresse??null, client_ville??null,
+         plan??'mensuel', dateFin.toISOString(), max_appareils??1, notes??null]);
       return res.json({ ok: true, ...rows[0] });
     }
     const db = jsonLire();
     const l  = {
       id: db.nextId++, cle, client_nom,
-      client_email: client_email ?? null, client_tel: client_tel ?? null,
-      plan: plan ?? 'mensuel',
-      date_debut: new Date().toISOString(), date_fin: dateFin.toISOString(),
-      max_appareils: max_appareils ?? 1, actif: true, notes: notes ?? null,
-      created_at: new Date().toISOString(),
+      client_prenom: client_prenom??null, client_nom_fam: client_nom_fam??null,
+      client_email: client_email??null, client_tel: client_tel??null,
+      client_tel2: client_tel2??null, client_adresse: client_adresse??null,
+      client_ville: client_ville??null,
+      plan: plan??'mensuel', date_debut: new Date().toISOString(),
+      date_fin: dateFin.toISOString(), max_appareils: max_appareils??1,
+      actif: true, notes: notes??null, created_at: new Date().toISOString(),
     };
     db.licences.push(l);
     jsonSauve(db);

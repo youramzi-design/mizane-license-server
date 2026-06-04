@@ -172,13 +172,37 @@
     </div>
     <div class="field-row">
       <div class="field">
+        <label>Prénom du gérant</label>
+        <input id="f-prenom" type="text" placeholder="Mohamed" />
+      </div>
+      <div class="field">
+        <label>Nom du gérant</label>
+        <input id="f-nomfam" type="text" placeholder="Alaoui" />
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
         <label>Email</label>
         <input id="f-email" type="email" placeholder="contact@bijouterie.ma" />
       </div>
       <div class="field">
-        <label>Téléphone</label>
+        <label>Téléphone principal</label>
         <input id="f-tel" type="tel" placeholder="0661234567" />
       </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Téléphone 2</label>
+        <input id="f-tel2" type="tel" placeholder="0661234567" />
+      </div>
+      <div class="field">
+        <label>Ville</label>
+        <input id="f-ville" type="text" placeholder="Casablanca" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Adresse</label>
+      <input id="f-adresse" type="text" placeholder="123 Rue Mohammed V" />
     </div>
     <div class="field-row">
       <div class="field">
@@ -222,13 +246,37 @@
     </div>
     <div class="field-row">
       <div class="field">
+        <label>Prénom du gérant</label>
+        <input id="m-prenom" type="text" placeholder="Mohamed" />
+      </div>
+      <div class="field">
+        <label>Nom du gérant</label>
+        <input id="m-nomfam" type="text" placeholder="Alaoui" />
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
         <label>Email</label>
         <input id="m-email" type="email" placeholder="contact@bijouterie.ma" />
       </div>
       <div class="field">
-        <label>Téléphone</label>
+        <label>Téléphone principal</label>
         <input id="m-tel" type="tel" placeholder="0661234567" />
       </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Téléphone 2</label>
+        <input id="m-tel2" type="tel" placeholder="0661234567" />
+      </div>
+      <div class="field">
+        <label>Ville</label>
+        <input id="m-ville" type="text" placeholder="Casablanca" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Adresse</label>
+      <input id="m-adresse" type="text" placeholder="123 Rue Mohammed V" />
     </div>
     <div class="field">
       <label>Notes</label>
@@ -399,7 +447,8 @@ function afficherTable(rows) {
 }
 
 function ouvrirModalCreation() {
-  ['f-nom','f-email','f-tel','f-notes'].forEach(id => document.getElementById(id).value = '');
+  ['f-nom','f-prenom','f-nomfam','f-email','f-tel','f-tel2','f-adresse','f-ville','f-notes']
+    .forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-plan').value     = 'mensuel';
   document.getElementById('f-mois').value     = '1';
   document.getElementById('f-appareils').value= '1';
@@ -417,12 +466,17 @@ async function creerLicence() {
   }
   const data = await api('POST', '/admin/licences', {
     client_nom:    nom,
-    client_email:  document.getElementById('f-email').value.trim() || null,
-    client_tel:    document.getElementById('f-tel').value.trim()   || null,
+    client_prenom: document.getElementById('f-prenom').value.trim()  || null,
+    client_nom_fam:document.getElementById('f-nomfam').value.trim()  || null,
+    client_email:  document.getElementById('f-email').value.trim()   || null,
+    client_tel:    document.getElementById('f-tel').value.trim()     || null,
+    client_tel2:   document.getElementById('f-tel2').value.trim()    || null,
+    client_adresse:document.getElementById('f-adresse').value.trim() || null,
+    client_ville:  document.getElementById('f-ville').value.trim()   || null,
     plan:          document.getElementById('f-plan').value,
     mois:          parseInt(document.getElementById('f-mois').value) || 1,
     max_appareils: parseInt(document.getElementById('f-appareils').value) || 1,
-    notes:         document.getElementById('f-notes').value.trim() || null,
+    notes:         document.getElementById('f-notes').value.trim()   || null,
   });
   if (data.ok) {
     fermerModal('modal-creation');
@@ -440,10 +494,15 @@ async function voirDetail(id) {
   const acts = data.activations ?? [];
   document.getElementById('detail-content').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px">
+      <div><span style="color:#64748b">Gérant :</span> ${[data.client_prenom, data.client_nom_fam].filter(Boolean).join(' ') || '—'}</div>
       <div><span style="color:#64748b">Plan :</span> <span class="badge plan-${data.plan}">${data.plan}</span></div>
-      <div><span style="color:#64748b">Expire :</span> ${new Date(data.date_fin).toLocaleDateString('fr-MA')}</div>
       <div><span style="color:#64748b">Email :</span> ${data.client_email ?? '—'}</div>
-      <div><span style="color:#64748b">Tél :</span> ${data.client_tel ?? '—'}</div>
+      <div><span style="color:#64748b">Expire :</span> ${new Date(data.date_fin).toLocaleDateString('fr-MA')}</div>
+      <div><span style="color:#64748b">Tél 1 :</span> ${data.client_tel ?? '—'}</div>
+      <div><span style="color:#64748b">Tél 2 :</span> ${data.client_tel2 ?? '—'}</div>
+      <div><span style="color:#64748b">Ville :</span> ${data.client_ville ?? '—'}</div>
+      <div><span style="color:#64748b">Adresse :</span> ${data.client_adresse ?? '—'}</div>
+      ${data.notes ? `<div style="grid-column:1/-1"><span style="color:#64748b">Notes :</span> ${esc(data.notes)}</div>` : ''}
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;">
@@ -486,11 +545,16 @@ async function voirDetail(id) {
 function ouvrirModifier(id) {
   const l = licences.find(x => x.id === id);
   if (!l) return;
-  document.getElementById('m-id').value    = id;
-  document.getElementById('m-nom').value   = l.client_nom   ?? '';
-  document.getElementById('m-email').value = l.client_email ?? '';
-  document.getElementById('m-tel').value   = l.client_tel   ?? '';
-  document.getElementById('m-notes').value = l.notes        ?? '';
+  document.getElementById('m-id').value      = id;
+  document.getElementById('m-nom').value     = l.client_nom     ?? '';
+  document.getElementById('m-prenom').value  = l.client_prenom  ?? '';
+  document.getElementById('m-nomfam').value  = l.client_nom_fam ?? '';
+  document.getElementById('m-email').value   = l.client_email   ?? '';
+  document.getElementById('m-tel').value     = l.client_tel     ?? '';
+  document.getElementById('m-tel2').value    = l.client_tel2    ?? '';
+  document.getElementById('m-adresse').value = l.client_adresse ?? '';
+  document.getElementById('m-ville').value   = l.client_ville   ?? '';
+  document.getElementById('m-notes').value   = l.notes          ?? '';
   document.getElementById('modifier-err').style.display = 'none';
   document.getElementById('modal-modifier').classList.remove('hidden');
   document.getElementById('m-nom').focus();
@@ -505,10 +569,15 @@ async function sauvegarderModification() {
     return;
   }
   const data = await api('PUT', `/admin/licences/${id}/modifier`, {
-    client_nom:   nom,
-    client_email: document.getElementById('m-email').value.trim() || null,
-    client_tel:   document.getElementById('m-tel').value.trim()   || null,
-    notes:        document.getElementById('m-notes').value.trim() || null,
+    client_nom:    nom,
+    client_prenom: document.getElementById('m-prenom').value.trim()  || null,
+    client_nom_fam:document.getElementById('m-nomfam').value.trim()  || null,
+    client_email:  document.getElementById('m-email').value.trim()   || null,
+    client_tel:    document.getElementById('m-tel').value.trim()     || null,
+    client_tel2:   document.getElementById('m-tel2').value.trim()    || null,
+    client_adresse:document.getElementById('m-adresse').value.trim() || null,
+    client_ville:  document.getElementById('m-ville').value.trim()   || null,
+    notes:         document.getElementById('m-notes').value.trim()   || null,
   });
   if (data.ok) {
     fermerModal('modal-modifier');
