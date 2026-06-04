@@ -383,7 +383,7 @@ function afficherTable(rows) {
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="voirDetail(${l.id})">Détail</button>
-            <button class="btn btn-primary" style="padding:5px 10px;font-size:11px;background:#1d4ed8" onclick="ouvrirModifier(${l.id},'${esc(l.client_nom)}','${esc(l.client_email??'')}','${esc(l.client_tel??'')}','${esc(l.notes??'')}')">✏️ Modifier</button>
+            <button class="btn btn-primary" style="padding:5px 10px;font-size:11px;background:#1d4ed8" onclick="ouvrirModifier(${l.id})">✏️ Modifier</button>
             <button class="btn btn-success" style="padding:5px 10px;font-size:11px" onclick="prolonger(${l.id},'${esc(l.client_nom)}')">+Durée</button>
             <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="modifierDate(${l.id},'${esc(l.client_nom)}','${l.date_fin}')">✏️ Date</button>
             ${l.actif
@@ -483,12 +483,14 @@ async function voirDetail(id) {
   document.getElementById('modal-detail').classList.remove('hidden');
 }
 
-function ouvrirModifier(id, nom, email, tel, notes) {
+function ouvrirModifier(id) {
+  const l = licences.find(x => x.id === id);
+  if (!l) return;
   document.getElementById('m-id').value    = id;
-  document.getElementById('m-nom').value   = nom;
-  document.getElementById('m-email').value = email;
-  document.getElementById('m-tel').value   = tel;
-  document.getElementById('m-notes').value = notes;
+  document.getElementById('m-nom').value   = l.client_nom   ?? '';
+  document.getElementById('m-email').value = l.client_email ?? '';
+  document.getElementById('m-tel').value   = l.client_tel   ?? '';
+  document.getElementById('m-notes').value = l.notes        ?? '';
   document.getElementById('modifier-err').style.display = 'none';
   document.getElementById('modal-modifier').classList.remove('hidden');
   document.getElementById('m-nom').focus();
