@@ -285,6 +285,18 @@
       <input id="m-adresse" type="text" placeholder="123 Rue Mohammed V" />
     </div>
     <div class="field">
+      <label>Plan</label>
+      <select id="m-plan">
+        <option value="starter">Starter — 3 500 MAD/an</option>
+        <option value="pro">Pro — 6 500 MAD/an</option>
+        <option value="premium">Premium — 10 000 MAD/an</option>
+        <option value="essai">Essai (gratuit)</option>
+        <option value="mensuel">Mensuel</option>
+        <option value="annuel">Annuel</option>
+        <option value="illimite">Illimité</option>
+      </select>
+    </div>
+    <div class="field">
       <label>Notes</label>
       <input id="m-notes" type="text" placeholder="Remarques..." />
     </div>
@@ -562,6 +574,7 @@ function ouvrirModifier(id) {
   document.getElementById('m-adresse').value = l.client_adresse ?? '';
   document.getElementById('m-ville').value   = l.client_ville   ?? '';
   document.getElementById('m-notes').value   = l.notes          ?? '';
+  document.getElementById('m-plan').value    = l.plan           ?? 'pro';
   document.getElementById('modifier-err').style.display = 'none';
   document.getElementById('modal-modifier').classList.remove('hidden');
   document.getElementById('m-nom').focus();
@@ -575,23 +588,34 @@ async function sauvegarderModification() {
     document.getElementById('modifier-err').style.display = 'block';
     return;
   }
-  const data = await api('PUT', `/admin/licences/${id}/modifier`, {
-    client_nom:    nom,
-    client_prenom: document.getElementById('m-prenom').value.trim()  || null,
-    client_nom_fam:document.getElementById('m-nomfam').value.trim()  || null,
-    client_email:  document.getElementById('m-email').value.trim()   || null,
-    client_tel:    document.getElementById('m-tel').value.trim()     || null,
-    client_tel2:   document.getElementById('m-tel2').value.trim()    || null,
-    client_adresse:document.getElementById('m-adresse').value.trim() || null,
-    client_ville:  document.getElementById('m-ville').value.trim()   || null,
-    notes:         document.getElementById('m-notes').value.trim()   || null,
-  });
-  if (data.ok) {
+  const nouveauPlan = document.getElementById('m-plan').value;
+  const licenceActuelle = licences.find(l => l.id === parseInt(id));
+
+  const [dataClient, dataPlan] = await Promise.all([
+    api('PUT', `/admin/licences/${id}/modifier`, {
+      client_nom:    nom,
+      client_prenom: document.getElementById('m-prenom').value.trim()  || null,
+      client_nom_fam:document.getElementById('m-nomfam').value.trim()  || null,
+      client_email:  document.getElementById('m-email').value.trim()   || null,
+      client_tel:    document.getElementById('m-tel').value.trim()     || null,
+      client_tel2:   document.getElementById('m-tel2').value.trim()    || null,
+      client_adresse:document.getElementById('m-adresse').value.trim() || null,
+      client_ville:  document.getElementById('m-ville').value.trim()   || null,
+      notes:         document.getElementById('m-notes').value.trim()   || null,
+    }),
+    licenceActuelle?.plan !== nouveauPlan
+      ? api('PUT', `/admin/licences/${id}/plan`, { plan: nouveauPlan })
+      : Promise.resolve({ ok: true }),
+  ]);
+
+  if (dataClient.ok && dataPlan.ok) {
     fermerModal('modal-modifier');
-    toast('✅ Client modifié');
+    const planChange = licenceActuelle?.plan !== nouveauPlan ? ` · Plan → ${nouveauPlan}` : '';
+    toast(`✅ Client modifié${planChange}`);
     charger();
   } else {
-    document.getElementById('modifier-err').textContent = data.erreur ?? 'Erreur';
+    const err = (!dataClient.ok ? dataClient.erreur : dataPlan.erreur) ?? 'Erreur';
+    document.getElementById('modifier-err').textContent = err;
     document.getElementById('modifier-err').style.display = 'block';
   }
 }
