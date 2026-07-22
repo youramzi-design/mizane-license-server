@@ -63,6 +63,9 @@
     .badge-red    { background: #7f1d1d; color: #fca5a5; }
     .badge-orange { background: #78350f; color: #fcd34d; }
     .badge-gray   { background: #1e293b; color: #64748b; border: 1px solid #334155; }
+    .plan-starter  { background: #1e3a5f; color: #93c5fd; }
+    .plan-pro      { background: #44250a; color: #fbbf24; }
+    .plan-premium  { background: #2d1a4b; color: #c4b5fd; }
     .plan-mensuel  { background: #1e3a5f; color: #60a5fa; }
     .plan-annuel   { background: #312e81; color: #a5b4fc; }
     .plan-illimite { background: #064e3b; color: #34d399; }
@@ -208,8 +211,11 @@
       <div class="field">
         <label>Plan</label>
         <select id="f-plan">
+          <option value="starter">Starter — 3 500 MAD/an</option>
+          <option value="pro" selected>Pro — 6 500 MAD/an</option>
+          <option value="premium">Premium — 10 000 MAD/an</option>
           <option value="essai">Essai (gratuit)</option>
-          <option value="mensuel" selected>Mensuel</option>
+          <option value="mensuel">Mensuel</option>
           <option value="annuel">Annuel</option>
           <option value="illimite">Illimité</option>
         </select>
@@ -434,6 +440,7 @@ function afficherTable(rows) {
             <button class="btn btn-primary" style="padding:5px 10px;font-size:11px;background:#1d4ed8" onclick="ouvrirModifier(${l.id})">✏️ Modifier</button>
             <button class="btn btn-success" style="padding:5px 10px;font-size:11px" onclick="prolonger(${l.id},'${esc(l.client_nom)}')">+Durée</button>
             <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="modifierDate(${l.id},'${esc(l.client_nom)}','${l.date_fin}')">✏️ Date</button>
+            <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:#c4b5fd" onclick="changerPlan(${l.id},'${l.plan}')">📋 Plan</button>
             ${l.actif
               ? `<button class="btn btn-danger" style="padding:5px 10px;font-size:11px" onclick="revoquer(${l.id},'${esc(l.client_nom)}')">Révoquer</button>`
               : `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="reactiver(${l.id})">Réactiver</button>`
@@ -449,7 +456,7 @@ function afficherTable(rows) {
 function ouvrirModalCreation() {
   ['f-nom','f-prenom','f-nomfam','f-email','f-tel','f-tel2','f-adresse','f-ville','f-notes']
     .forEach(id => document.getElementById(id).value = '');
-  document.getElementById('f-plan').value     = 'mensuel';
+  document.getElementById('f-plan').value     = 'pro';
   document.getElementById('f-mois').value     = '1';
   document.getElementById('f-appareils').value= '1';
   document.getElementById('modal-err').style.display = 'none';
@@ -668,6 +675,23 @@ async function supprimerAppareil(id) {
     method: 'DELETE', headers: { 'x-admin-key': ADMIN_KEY }
   }).then(r => r.json());
   if (data.ok) { toast('🗑️ Appareil supprimé'); fermerModal('modal-detail'); charger(); }
+  else toast('❌ ' + (data.erreur ?? 'Erreur'));
+}
+
+async function changerPlan(id, planActuel) {
+  const plansValides = ['starter','pro','premium','mensuel','annuel','illimite'];
+  const nouveau = prompt(
+    `Changer le plan de la licence\n\nPlan actuel : ${planActuel}\n\nPlans disponibles :\n  starter, pro, premium\n  mensuel, annuel, illimite\n\nNouveau plan :`,
+    planActuel
+  );
+  if (!nouveau || nouveau.trim() === planActuel) return;
+  const plan = nouveau.trim().toLowerCase();
+  if (!plansValides.includes(plan)) {
+    alert('Plan invalide.\nPlans valides : ' + plansValides.join(', '));
+    return;
+  }
+  const data = await api('PUT', `/admin/licences/${id}/plan`, { plan });
+  if (data.ok) { toast(`✅ Plan changé → ${data.plan}`); charger(); }
   else toast('❌ ' + (data.erreur ?? 'Erreur'));
 }
 

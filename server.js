@@ -418,7 +418,7 @@ app.post('/admin/licences', adminAuth, async (req, res) => {
   const dateFin = new Date();
   if (plan === 'illimite')    dateFin.setFullYear(dateFin.getFullYear() + 99);
   else if (plan === 'annuel') dateFin.setFullYear(dateFin.getFullYear() + (mois ? Math.ceil(mois / 12) : 1));
-  else                        dateFin.setMonth(dateFin.getMonth() + (mois ?? 1));
+  else                        dateFin.setMonth(dateFin.getMonth() + (parseInt(mois) || 1));
 
   const cle = genererCle();
   try {
@@ -448,6 +448,26 @@ app.post('/admin/licences', adminAuth, async (req, res) => {
     db.licences.push(l);
     jsonSauve(db);
     res.json({ ok: true, id: l.id, cle: l.cle, date_fin: l.date_fin });
+  } catch (err) { console.error(err); res.status(500).json({ erreur: 'Erreur serveur' }); }
+});
+
+app.put('/admin/licences/:id/plan', adminAuth, async (req, res) => {
+  const { plan } = req.body;
+  const PLANS_VALIDES = ['starter', 'pro', 'premium', 'mensuel', 'annuel', 'illimite'];
+  if (!plan || !PLANS_VALIDES.includes(plan))
+    return res.status(400).json({ erreur: `Plan invalide. Valeurs : ${PLANS_VALIDES.join(', ')}` });
+  const id = parseInt(req.params.id);
+  try {
+    if (USE_PG) {
+      await pool.query('UPDATE licences SET plan=$1 WHERE id=$2', [plan, id]);
+      return res.json({ ok: true, plan });
+    }
+    const db = jsonLire();
+    const l  = db.licences.find(l => l.id === id);
+    if (!l) return res.status(404).json({ erreur: 'Introuvable' });
+    l.plan = plan;
+    jsonSauve(db);
+    res.json({ ok: true, plan });
   } catch (err) { console.error(err); res.status(500).json({ erreur: 'Erreur serveur' }); }
 });
 
