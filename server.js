@@ -66,7 +66,7 @@ async function initDB() {
       client_tel2     TEXT,
       client_adresse  TEXT,
       client_ville    TEXT,
-      plan            TEXT DEFAULT 'mensuel',
+      plan            TEXT DEFAULT 'pro',
       date_debut      TIMESTAMPTZ DEFAULT NOW(),
       date_fin        TIMESTAMPTZ NOT NULL,
       max_appareils   INT DEFAULT 1,
@@ -416,9 +416,7 @@ app.post('/admin/licences', adminAuth, async (req, res) => {
   if (!client_nom) return res.status(400).json({ erreur: 'Nom client obligatoire' });
 
   const dateFin = new Date();
-  if (plan === 'illimite')    dateFin.setFullYear(dateFin.getFullYear() + 99);
-  else if (plan === 'annuel') dateFin.setFullYear(dateFin.getFullYear() + (mois ? Math.ceil(mois / 12) : 1));
-  else                        dateFin.setMonth(dateFin.getMonth() + (parseInt(mois) || 1));
+  dateFin.setMonth(dateFin.getMonth() + (parseInt(mois) || 12));
 
   const cle = genererCle();
   try {
@@ -431,7 +429,7 @@ app.post('/admin/licences', adminAuth, async (req, res) => {
         [cle, client_nom, client_prenom??null, client_nom_fam??null,
          client_email??null, client_tel??null, client_tel2??null,
          client_adresse??null, client_ville??null,
-         plan??'mensuel', dateFin.toISOString(), max_appareils??1, notes??null]);
+         plan??'pro', dateFin.toISOString(), max_appareils??1, notes??null]);
       return res.json({ ok: true, ...rows[0] });
     }
     const db = jsonLire();
@@ -441,7 +439,7 @@ app.post('/admin/licences', adminAuth, async (req, res) => {
       client_email: client_email??null, client_tel: client_tel??null,
       client_tel2: client_tel2??null, client_adresse: client_adresse??null,
       client_ville: client_ville??null,
-      plan: plan??'mensuel', date_debut: new Date().toISOString(),
+      plan: plan??'pro', date_debut: new Date().toISOString(),
       date_fin: dateFin.toISOString(), max_appareils: max_appareils??1,
       actif: true, notes: notes??null, created_at: new Date().toISOString(),
     };
@@ -453,7 +451,7 @@ app.post('/admin/licences', adminAuth, async (req, res) => {
 
 app.put('/admin/licences/:id/plan', adminAuth, async (req, res) => {
   const { plan } = req.body;
-  const PLANS_VALIDES = ['starter', 'pro', 'premium', 'mensuel', 'annuel', 'illimite'];
+  const PLANS_VALIDES = ['starter', 'pro', 'premium', 'essai'];
   if (!plan || !PLANS_VALIDES.includes(plan))
     return res.status(400).json({ erreur: `Plan invalide. Valeurs : ${PLANS_VALIDES.join(', ')}` });
   const id = parseInt(req.params.id);
