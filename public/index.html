@@ -568,7 +568,10 @@ function ouvrirModifier(id) {
   document.getElementById('m-adresse').value = l.client_adresse ?? '';
   document.getElementById('m-ville').value   = l.client_ville   ?? '';
   document.getElementById('m-notes').value   = l.notes          ?? '';
-  document.getElementById('m-plan').value    = l.plan           ?? 'pro';
+  const planSelect = document.getElementById('m-plan');
+  planSelect.value = l.plan ?? 'pro';
+  // Si le plan n'est pas dans les options (plan legacy), forcer "pro"
+  if (!planSelect.value || planSelect.value !== (l.plan ?? 'pro')) planSelect.value = 'pro';
   document.getElementById('modifier-err').style.display = 'none';
   document.getElementById('modal-modifier').classList.remove('hidden');
   document.getElementById('m-nom').focus();
